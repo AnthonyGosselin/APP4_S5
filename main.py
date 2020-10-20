@@ -6,6 +6,9 @@ from zplane import zplane
 
 import image
 import functions
+import helper as h
+
+pi = np.pi
 
 
 """
@@ -14,5 +17,5 @@ Mettons les fonctions dans des fichiers externes, ici on aura juste du code pour
 
 
 if __name__ == "__main__":
-    image.load_image("goldhill_rotate.png")
+    image.load_image("goldhill_aberrations.npy")
     plt.show() # Necessary to see all plots and images
