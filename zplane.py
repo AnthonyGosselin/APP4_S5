@@ -31,6 +31,7 @@ def zplane(b, a, filename=None):
     """
 
     # get a figure/plot
+    plt.figure()
     ax = plt.subplot(111)
 
     # create the unit circle
@@ -79,9 +80,9 @@ def zplane(b, a, filename=None):
     plt.xticks(ticks);
     plt.yticks(ticks)
 
-    if filename is None:
-        plt.show()
-    else:
-        plt.savefig(filename)
+    # if filename is None:
+    #     plt.show()
+    # else:
+    #     plt.savefig(filename)
 
     return z, p, k

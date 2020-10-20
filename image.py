@@ -8,7 +8,7 @@ For basic image manipulation functions
 
 
 # To load image data and display it
-def load_image(image_name, show=True, gray=True):
+def load_image(image_name, show=False, gray=True):
     if gray:
         plt.gray()
 
