@@ -139,7 +139,7 @@ def prob4():
    T = np.array([[2,0], [0, 0.5]])
 
    plt.gray()
-   img = mpng.imread('goldhill.png')
+   img = mpng.imread('./images_in/goldhill.png')
    plt.imshow(img)
    new_img = np.zeros((256, 1024))
 
@@ -154,7 +154,7 @@ def prob4():
          new_img[int(newind[1])][int(newind[0])] = img[y][x]
 
 
-   plt.imshow(new_img)
+   #plt.imshow(new_img)
 
 
 
@@ -177,7 +177,7 @@ def procedural_3():
    plt.figure()
    plt.plot(w, Hw2)
 
-procedural_3()
+prob4()
 
 
 
