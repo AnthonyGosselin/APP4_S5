@@ -2,13 +2,15 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpng
 import numpy as np
 
+import helper as h
+
 """
 For basic image manipulation functions
 """
 
 
 # To load image data and display it
-def load_image(image_name, show=False, gray=True):
+def load_image(image_name, show=False, gray=True, title=""):
     if gray:
         plt.gray()
 
@@ -21,6 +23,6 @@ def load_image(image_name, show=False, gray=True):
         raise Exception("File name must include either .png or .npy file extension")
 
     if show:
-        plt.imshow(img)
+        h.imshow(img, title=title)
 
     return img

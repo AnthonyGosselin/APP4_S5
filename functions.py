@@ -54,17 +54,24 @@ def H_inv(data, checkStable=False, printZmap=False):
 
 
 
-def rotate90(data):
+def rotate90(data, testing=False):
     # Rotation matrix
     rot_mat = [[0, -1], [1, 0]]  # [[cos(-90), -sin(-90)], [sin(-90), cos(-90)]]
 
-    print(data.shape)
-    x_size, y_size, z_size = data.shape
+    # Complete image doesn't have a third dimension like rotate testing image...
+    if testing:
+        x_size, y_size, z_size = data.shape
+    else:
+        x_size, y_size = data.shape
 
     x_half = int((x_size-1) / 2)
     y_half = int((y_size-1) / 2)
 
-    data_rotated = np.zeros((y_size, x_size, z_size))
+    if testing:
+        data_rotated = np.zeros((y_size, x_size, z_size))
+    else:
+        data_rotated = np.zeros((y_size, x_size))
+
     for y in range(0, y_size):
         for x in range(0, x_size):
             x_centered = x - x_half
@@ -79,3 +86,60 @@ def rotate90(data):
     h.imshow(data_rotated)
 
     return data_rotated
+
+
+def denoise(data, transBi=False):
+    fd_pass = 500
+    fd_stop = 750
+    fe = 1600
+
+    w = 1 / fe
+
+    wd_pass = fd_pass * w
+    wd_stop = fd_stop * w
+
+    g_pass = 0.5
+    g_stop = 40
+
+    if transBi:
+
+        fa_pass = h.gauchissement(fd_pass)
+        fa_stop = h.gauchissement(fd_stop)
+
+    else:
+
+        order = np.zeros(4)
+        wn = np.zeros(4)
+
+        # Butterworth
+        order[0], wn[0] = signal.buttord(wd_pass, wd_stop, g_pass, g_stop, False, fe)
+
+        # Chebyshev type 1
+        order[1], wn[1] = signal.cheb1ord(wd_pass, wd_stop, g_pass, g_stop, False, fe)
+
+        # Chebyshev type 2
+        order[2], wn[2] = signal.cheb2ord(wd_pass, wd_stop, g_pass, g_stop, False, fe)
+
+        # Elliptic
+        order[3], wn[3] = signal.ellipord(wd_pass, wd_stop, g_pass, g_stop, False, fe)
+
+        lowest_order_index = np.argmin(order)
+        print(order)
+        print(lowest_order_index)
+
+        if (lowest_order_index == 0):
+            num, denum = signal.butter(order[0], wn[0], 'lowpass', False)
+        elif (lowest_order_index == 1):
+            num, denum = signal.cheby1(order[1], g_pass, wn[1], 'lowpass', False)
+        elif (lowest_order_index == 2):
+            num, denum = signal.cheby2(order[2], g_stop, wn[2], 'lowpass', False)
+        else:
+            num, denum = signal.ellip(order[3], g_pass, g_stop, wn[3], 'lowpass', False)
+
+
+        h.plot_filter(num, denum, title="Filter response", in_dB=True)
+
+        data_denoised = signal.lfilter(num, denum, data)
+        h.imshow(data_denoised, "After filter")
+
+    return data_denoised
