@@ -23,14 +23,15 @@ def H_inv(data, verbose=True, in_dB=True):
 
     # Inverse TF
     # Inverse poles/zeroes and num/denum to have inverse TF
-    zeroesInv = poles
-    polesInv = zeroes
-    numInv = denum
-    denumInv = num
+    zeroes_inv = poles
+    poles_inv = zeroes
+    num_inv = denum
+    denum_inv = num
 
-    # Verify for pole stability
+
     if verbose:
-        for pole in polesInv:
+        # Verify for pole stability
+        for pole in poles_inv:
             if np.abs(pole) > 1:
                 print("Filter Unstable")
             break
@@ -38,16 +39,15 @@ def H_inv(data, verbose=True, in_dB=True):
 
         # Print zplane for TF and inverse TF
         zplane(num, denum, t="H(z) zplane")
-        zplane(numInv, denumInv, t="H(z)-1 zplane")
+        zplane(num_inv, denum_inv, t="H(z)-1 zplane")
 
         h.plot_filter(num, denum, t="H(z) (original) transfer function", in_dB=in_dB)
         h.plot_filter(num, denum, t="H(z)-1 (inverse) transfer function", in_dB=in_dB)
 
+    data_filtered = signal.lfilter(num_inv, denum_inv, data)
+    h.imshow(data_filtered, t="After H(z)-1 filter")
 
-    dataFiltered = signal.lfilter(numInv, denumInv, data)
-    h.imshow(dataFiltered, t="After H(z)-1 filter")
-
-    return dataFiltered
+    return data_filtered
 
 
 
@@ -85,7 +85,7 @@ def rotate90(data, testing=False):
     return data_rotated
 
 
-def denoise(data, transBi=False, verbose=True):
+def denoise(data, trans_bi=False, by_hand=False, verbose=True):
     fd_pass = 500
     fd_stop = 750
     fe = 1600
@@ -98,49 +98,49 @@ def denoise(data, transBi=False, verbose=True):
     g_pass = 0.5
     g_stop = 40
 
-    if transBi:
+    if trans_bi:
+        if not by_hand:
+            # "Gauchissement"
+            wa_pass = h.gauchissement(fd_pass, fe)
 
-        # Gauchissement
-        wa_pass = h.gauchissement(fd_pass, fe)
-        #wa_stop = h.gauchissement(fd_stop, fe)
+            # Write H(s) -> H(z) function
+            z = sp.Symbol('z')
+            s = 2 * fe * (z-1) / (z+1)
+            H = 1 / ((s/wa_pass)**2 + np.sqrt(2)*(s/wa_pass) + 1)
+            H = sp.simplify(H)
+            if verbose: print(H)
 
-        # Write H(s) -> H(z) function
-        z = sp.Symbol('z')
-        s = 2 * fe * (z-1) / (z+1)
-        H = 1 / ((s/wa_pass)**2 + np.sqrt(2)*(s/wa_pass) + 1)
-        H = sp.simplify(H)
-        if verbose: print(H)
+            # Seperate num and denum into fractions
+            num, denum = sp.fraction(H)
 
-        # Seperate num and denum into fractions
-        num, denum = sp.fraction(H)
-        # Put them in polynomial form
-        num = sp.poly(num)
-        denum = sp.poly(denum)
+            # Put them in polynomial form
+            num = sp.poly(num)
+            denum = sp.poly(denum)
 
-        # Find zeros and poles
-        zeros = sp.roots(num)
-        poles = sp.roots(denum)
-        if verbose: print("Zeros and poles: " + str(zeros) + ", " + str(poles))
+            # Find zeros and poles
+            zeros = sp.roots(num)
+            poles = sp.roots(denum)
+            if verbose:
+                print("Zeros and poles: " + str(zeros) + ", " + str(poles))
 
-        # Extract all coefficients and write it in np.array form
-        num = np.float64(np.array(num.all_coeffs()))
-        denum = np.float64(np.array(denum.all_coeffs()))
-        if verbose:
-            print("Num and Denum: " + str(num, ) + ", " + str(denum))
-            zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
-            h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
+            # Extract all coefficients and write it in np.array form
+            num = np.float64(np.array(num.all_coeffs()))
+            denum = np.float64(np.array(denum.all_coeffs()))
+            if verbose:
+                print("Num and Denum: " + str(num, ) + ", " + str(denum))
+                zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
+                h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
+        else:
+            # Done by hand
+            zeros = [-1, -1]
+            poles = [np.complex(-0.2314, 0.3951), np.complex(-0.2314, -0.3951)]
 
-        # # Done by hand, check why different
-        # zeros = [-1, -1]
-        # poles = [np.complex(-0.2314, 0.3951), np.complex(-0.2314, -0.3951)]
-        #
-        # num = np.poly(zeros)
-        # denum = np.poly(poles)
-        #
-        # if verbose:
-        #     zplane(num, denum, t="Butterworth order 2 (trans bi) zplane")
-        #     h.plot_filter(num, denum, t="Butterworth order 2 (trans bi)", in_dB=False)
+            num = np.poly(zeros)
+            denum = np.poly(poles)
 
+            if verbose:
+                zplane(num, denum, t="Butterworth order 2 (trans bi) zplane")
+                h.plot_filter(num, denum, t="Butterworth order 2 (trans bi)", in_dB=False)
 
         data_denoised = signal.lfilter(num, denum, data)
         h.imshow(data_denoised, t="After Butterworth order2 trans bi filter")
@@ -189,22 +189,27 @@ def denoise(data, transBi=False, verbose=True):
 
 
 def compress_image(data, compress=True, compression_value=0.5, passing_matrix=None, verbose=False):
+
     if compress:
         # Find covariance matrix and then eigenvalues and eigenvectors
-        cov_matrix = np.cov(data)
+        cov_matrix = np.cov(np.transpose(data))
         eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
         passing_matrix = np.transpose(eigenvectors)
-        #identity = passing_matrix * np.linalg.inv(passing_matrix)
     else:
         # Since original base is orthogonal, inverse = transpose
-        #passing_matrix = np.transpose(passing_matrix)
-        passing_matrix = np.linalg.inv(passing_matrix)
+        passing_matrix = np.transpose(passing_matrix)
+        zero_appending_matrix = np.zeros((int(passing_matrix.shape[0]-data.shape[0]), data.shape[1]))
+        data = np.append(data, zero_appending_matrix, axis=0)
 
-    data_compressed = np.matmul(data, passing_matrix)
+        # Find 0 ratio that was used for compressing image
+        compression_value = float(zero_appending_matrix.shape[0]/passing_matrix.shape[0])
 
+    data_compressed = np.matmul(passing_matrix, data)
+
+    # Only send values of the matrix that do not have zeros
     if compress:
-        for y_index in np.arange(int((1-compression_value)*data_compressed.shape[0]), data_compressed.shape[0]):
-            data_compressed[y_index] = np.zeros(data_compressed.shape[1])
+        new_compressed_image = data_compressed[0:int((1-compression_value)*data_compressed.shape[0])]
+        data_compressed = new_compressed_image
 
     if verbose:
         if compress:
