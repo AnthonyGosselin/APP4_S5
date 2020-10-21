@@ -103,15 +103,13 @@ def denoise(data, transBi=False, verbose=True):
         # Gauchissement
         wa_pass = h.gauchissement(fd_pass, fe)
         #wa_stop = h.gauchissement(fd_stop, fe)
-        zeros = [-1, -1]
-        poles = [-0.20995, -1]
 
         # Write H(s) -> H(z) function
         z = sp.Symbol('z')
         s = 2 * fe * (z-1) / (z+1)
         H = 1 / ((s/wa_pass)**2 + np.sqrt(2)*(s/wa_pass) + 1)
         H = sp.simplify(H)
-        print(H)
+        if verbose: print(H)
 
         # Seperate num and denum into fractions
         num, denum = sp.fraction(H)
@@ -122,24 +120,27 @@ def denoise(data, transBi=False, verbose=True):
         # Find zeros and poles
         zeros = sp.roots(num)
         poles = sp.roots(denum)
-        print("Zeros and poles: " + str(zeros) + ", " + str(poles))
+        if verbose: print("Zeros and poles: " + str(zeros) + ", " + str(poles))
 
         # Extract all coefficients and write it in np.array form
         num = np.float64(np.array(num.all_coeffs()))
         denum = np.float64(np.array(denum.all_coeffs()))
-        print("Num and Denum: " + str(num, ) + ", " + str(denum))
-        zplane(num, denum)
-
-        data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, "After bilinear noise filter")
-
-
-        num = np.poly(zeros)
-        denum = np.poly(poles)
-
         if verbose:
-            zplane(num, denum, t="Cheby order 2 (trans bi) zplane")
-            h.plot_filter(num, denum, t="Cheby order 2 (trans bi)", in_dB=False)
+            print("Num and Denum: " + str(num, ) + ", " + str(denum))
+            zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
+            h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
+
+        ## Done by hand, check why different
+        # zeros = [-1, -1]
+        # poles = [-0.20995, -1]
+        #
+        # num = np.poly(zeros)
+        # denum = np.poly(poles)
+        #
+        # if verbose:
+        #     zplane(num, denum, t="Cheby order 2 (trans bi) zplane")
+        #     h.plot_filter(num, denum, t="Cheby order 2 (trans bi)", in_dB=False)
+        #
 
         data_denoised = signal.lfilter(num, denum, data)
         h.imshow(data_denoised, t="After Cheby order2 trans bi filter")
