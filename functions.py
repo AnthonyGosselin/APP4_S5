@@ -186,3 +186,32 @@ def denoise(data, transBi=False, verbose=True):
         h.imshow(data_denoised, "After python function noise filter")
 
     return data_denoised
+
+
+def compress_image(data, compress=True, compression_value=0.5, passing_matrix=None, verbose=False):
+    if compress:
+        # Find covariance matrix and then eigenvalues and eigenvectors
+        cov_matrix = np.cov(data)
+        eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+        passing_matrix = np.transpose(eigenvectors)
+        #identity = passing_matrix * np.linalg.inv(passing_matrix)
+    else:
+        # Since original base is orthogonal, inverse = transpose
+        #passing_matrix = np.transpose(passing_matrix)
+        passing_matrix = np.linalg.inv(passing_matrix)
+
+    data_compressed = np.matmul(data, passing_matrix)
+
+    if compress:
+        for y_index in np.arange(int((1-compression_value)*data_compressed.shape[0]), data_compressed.shape[0]):
+            data_compressed[y_index] = np.zeros(data_compressed.shape[1])
+
+    if verbose:
+        if compress:
+            name = "Compressed image with " + str(compression_value) + " compression ratio"
+            h.imshow(data_compressed, t=name)
+        else:
+            name = "Decompressed image with " + str(compression_value) + " compression ratio"
+            h.imshow(data_compressed, t=name)
+
+    return data_compressed, passing_matrix

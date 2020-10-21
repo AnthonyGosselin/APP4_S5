@@ -17,8 +17,8 @@ Mettons les fonctions dans des fichiers externes, ici on aura juste du code pour
 
 if __name__ == "__main__":
     # If testing = false, use complete image, else use individual problem images
-    testing = True
-    verbose = False
+    testing = False
+    verbose = True
 
     img_complete = image.load_image("image_complete.npy", show=False, title="Complete")
     img_aberration = image.load_image("goldhill_aberrations.npy", show=False, title="Aberrations")
@@ -28,6 +28,12 @@ if __name__ == "__main__":
 
     img_out_filtered = functions.H_inv(img_aberration if testing else img_complete, verbose=verbose, in_dB=True)
     img_out_rotated = functions.rotate90(img_rotate if testing else img_out_filtered, testing)
-    img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, transBi=True, verbose=True)
+    img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, transBi=True, verbose=verbose)
+
+    img_out_compressed, passing_matrix = functions.compress_image(img_out_denoised, compress=True, compression_value=0.5, verbose=verbose)
+    img_out_decompressed, passing_matrix = functions.compress_image(img_out_compressed, compress=False, compression_value=0.5, passing_matrix=passing_matrix, verbose=verbose)
+
+    img_out_compressed, passing_matrix = functions.compress_image(img_out_denoised, compress=True, compression_value=0.7, verbose=verbose)
+    img_out_decompressed, passing_matrix = functions.compress_image(img_out_compressed, compress=False, compression_value=0.7, passing_matrix=passing_matrix, verbose=verbose)
 
     plt.show()  # Necessary to see all plots and images
