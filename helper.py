@@ -35,8 +35,7 @@ def exp_img(mod, ang):
 def gauchissement(fd, fe):
     wd = 2 * np.pi * fd / fe
     wa = 2 * fe * np.tan(wd / 2)
-    fa = wa / (2 * np.pi)
-    return fa
+    return wa
 
 def plot_filter(num, denum, title="", in_dB=False):
     w, Hw = signal.freqz(num, denum)

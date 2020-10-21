@@ -3,6 +3,7 @@ import matplotlib.image as mpng
 import numpy as np
 from scipy import signal
 from zplane import zplane
+import sympy as sp
 
 import helper as h
 
@@ -103,8 +104,37 @@ def denoise(data, transBi=False):
 
     if transBi:
 
-        fa_pass = h.gauchissement(fd_pass)
-        fa_stop = h.gauchissement(fd_stop)
+        # Gauchissement
+        wa_pass = h.gauchissement(fd_pass, fe)
+        #wa_stop = h.gauchissement(fd_stop, fe)
+
+        # Write H(s) -> H(z) function
+        z = sp.Symbol('z')
+        s = 2 * fe * (z-1) / (z+1)
+        H = 1 / ((s/wa_pass)**2 + np.sqrt(2)*(s/wa_pass) + 1)
+        H = sp.simplify(H)
+        print(H)
+
+        # Seperate num and denum into fractions
+        num, denum = sp.fraction(H)
+        # Put them in polynomial form
+        num = sp.poly(num)
+        denum = sp.poly(denum)
+
+        # Find zeros and poles
+        zeros = sp.roots(num)
+        poles = sp.roots(denum)
+        print("Zeros and poles: " + str(zeros) + ", " + str(poles))
+
+        # Extract all coefficients and write it in np.array form
+        num = np.float64(np.array(num.all_coeffs()))
+        denum = np.float64(np.array(denum.all_coeffs()))
+        print("Num and Denum: " + str(num, ) + ", " + str(denum))
+        zplane(num, denum)
+
+        data_denoised = signal.lfilter(num, denum, data)
+        h.imshow(data_denoised, "After bilinear noise filter")
+
 
     else:
 
@@ -140,6 +170,6 @@ def denoise(data, transBi=False):
         h.plot_filter(num, denum, title="Filter response", in_dB=True)
 
         data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, "After filter")
+        h.imshow(data_denoised, "After python function noise filter")
 
     return data_denoised
