@@ -28,6 +28,6 @@ if __name__ == "__main__":
 
     img_out_filtered = functions.H_inv(img_aberration if testing else img_complete, verbose=verbose, in_dB=True)
     img_out_rotated = functions.rotate90(img_rotate if testing else img_out_filtered, testing)
-    img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, transBi=True, verbose=False)
+    img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, transBi=True, verbose=True)
 
     plt.show()  # Necessary to see all plots and images

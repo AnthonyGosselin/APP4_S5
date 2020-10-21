@@ -130,20 +130,20 @@ def denoise(data, transBi=False, verbose=True):
             zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
             h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
 
-        ## Done by hand, check why different
+        # # Done by hand, check why different
         # zeros = [-1, -1]
-        # poles = [-0.20995, -1]
+        # poles = [np.complex(-0.2314, 0.3951), np.complex(-0.2314, -0.3951)]
         #
         # num = np.poly(zeros)
         # denum = np.poly(poles)
         #
         # if verbose:
-        #     zplane(num, denum, t="Cheby order 2 (trans bi) zplane")
-        #     h.plot_filter(num, denum, t="Cheby order 2 (trans bi)", in_dB=False)
-        #
+        #     zplane(num, denum, t="Butterworth order 2 (trans bi) zplane")
+        #     h.plot_filter(num, denum, t="Butterworth order 2 (trans bi)", in_dB=False)
+
 
         data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, t="After Cheby order2 trans bi filter")
+        h.imshow(data_denoised, t="After Butterworth order2 trans bi filter")
 
     else:
 
