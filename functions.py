@@ -31,18 +31,22 @@ def H_inv(data, verbose=True, in_dB=True):
 
     if verbose:
         # Verify for pole stability
+        pole_stable = True
         for pole in poles_inv:
             if np.abs(pole) > 1:
-                print("Filter Unstable")
-            break
+                pole_stable = False
+                break
+        if pole_stable:
             print("Filter Stable")
+        else:
+            print("Filter Unstable")
 
         # Print zplane for TF and inverse TF
         zplane(num, denum, t="H(z) zplane")
         zplane(num_inv, denum_inv, t="H(z)-1 zplane")
 
         h.plot_filter(num, denum, t="H(z) (original) transfer function", in_dB=in_dB)
-        h.plot_filter(num, denum, t="H(z)-1 (inverse) transfer function", in_dB=in_dB)
+        h.plot_filter(num_inv, denum_inv, t="H(z)-1 (inverse) transfer function", in_dB=in_dB)
 
     data_filtered = signal.lfilter(num_inv, denum_inv, data)
     h.imshow(data_filtered, t="After H(z)-1 filter")
@@ -102,6 +106,7 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
         if not by_hand:
             # "Gauchissement"
             wa_pass = h.gauchissement(fd_pass, fe)
+            if verbose: print(wa_pass)
 
             # Write H(s) -> H(z) function
             z = sp.Symbol('z')
@@ -117,33 +122,39 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
             num = sp.poly(num)
             denum = sp.poly(denum)
 
-            # Find zeros and poles
-            zeros = sp.roots(num)
-            poles = sp.roots(denum)
+            # Extract all coefficients and write it in np.array form
+            k = 1 / 2.3914
+            num = np.float64(np.array(num.all_coeffs())) * k
+            denum = np.float64(np.array(denum.all_coeffs())) * k
+            if verbose:
+                print("Num and Denum: " + str(num) + ", " + str(denum))
+
+            # Extract zeros and poles by finding roots of num and den
+            zeros = np.roots(num)
+            poles = np.roots(denum)
             if verbose:
                 print("Zeros and poles: " + str(zeros) + ", " + str(poles))
 
-            # Extract all coefficients and write it in np.array form
-            num = np.float64(np.array(num.all_coeffs()))
-            denum = np.float64(np.array(denum.all_coeffs()))
             if verbose:
-                print("Num and Denum: " + str(num, ) + ", " + str(denum))
-                zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
-                h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
+                zplane(num, denum, t="zPlane 2nd order butterworth bilinéaire filter")
+                h.plot_filter(num, denum, t="2nd order butterworth bilinéaire filter", in_dB=True)
+
         else:
             # Done by hand
             zeros = [-1, -1]
             poles = [np.complex(-0.2314, 0.3951), np.complex(-0.2314, -0.3951)]
+            k = 1 / 2.39
 
-            num = np.poly(zeros)
+            num = k * np.poly(zeros)
             denum = np.poly(poles)
 
             if verbose:
-                zplane(num, denum, t="Butterworth order 2 (trans bi) zplane")
-                h.plot_filter(num, denum, t="Butterworth order 2 (trans bi)", in_dB=False)
+                print("Num and Denum: " + str(num, ) + ", " + str(denum))
+                zplane(num, denum, t="Butterworth order 2 (trans. bilinéaire) zplane")
+                h.plot_filter(num, denum, t="Butterworth order 2 (trans. bilinéaire)", in_dB=True)
 
         data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, t="After Butterworth order2 trans bi filter")
+        h.imshow(data_denoised, t="After Butterworth order 2 trans. bilinéaire filter")
 
     else:
 
@@ -163,24 +174,31 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
         order[3], wn[3] = signal.ellipord(wd_pass, wd_stop, g_pass, g_stop, False, fe)
 
         lowest_order_index = np.argmin(order)
-        print(order)
-        print(lowest_order_index)
+        if verbose:
+            print(order)
+            print(lowest_order_index)
 
         if (lowest_order_index == 0):
-            print("Butterworth filter order {order}".format(order=order[0]))
+            filter_name = "Butterworth filter order {order}".format(order=order[0])
             num, denum = signal.butter(order[0], wn[0], 'lowpass', False)
         elif (lowest_order_index == 1):
-            print("Cheby1 filter order {order}".format(order=order[1]))
+            filter_name = "Cheby1 filter order {order}".format(order=order[1])
             num, denum = signal.cheby1(order[1], g_pass, wn[1], 'lowpass', False)
         elif (lowest_order_index == 2):
-            print("Cheby2 filter order {order}".format(order=order[2]))
+            filter_name = "Cheby2 filter order {order}".format(order=order[2])
             num, denum = signal.cheby2(order[2], g_stop, wn[2], 'lowpass', False)
+            filter_name = "Cheby2 " + str(order[2]) + " order"
         else:
-            print("Ellip filter order {order}".format(order=order[3]))
+            filter_name = "Ellip filter order {order}".format(order=order[3])
             num, denum = signal.ellip(order[3], g_pass, g_stop, wn[3], 'lowpass', False)
 
+
         if verbose:
-            h.plot_filter(num, denum, t="Filter response", in_dB=True)
+            print(filter_name)
+            filter_response_str = "Filter response " + filter_name
+            zplane_str = "zPlane " + filter_name
+            h.plot_filter(num, denum, t=filter_response_str, in_dB=True)
+            zplane(num, denum, t=zplane_str)
 
         data_denoised = signal.lfilter(num, denum, data)
         h.imshow(data_denoised, "After python function noise filter")
