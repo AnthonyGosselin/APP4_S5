@@ -52,8 +52,10 @@ def H_inv(data, verbose=True, in_dB=True):
 
 
 def rotate90(data, testing=False):
+
     # Rotation matrix
-    rot_mat = [[0, -1], [1, 0]]  # [[cos(-90), -sin(-90)], [sin(-90), cos(-90)]]
+    rot_mat = [[0, -1],  # [[cos(-90), -sin(-90)],
+               [1, 0]]   # [ sin(-90), cos(-90)]]
 
     # Complete image doesn't have a third dimension like rotate testing image...
     if testing:
@@ -71,13 +73,17 @@ def rotate90(data, testing=False):
 
     for y in range(0, y_size):
         for x in range(0, x_size):
+            # Compute coordinates for centered image
             x_centered = x - x_half
             y_centered = y - y_half
-            new_centered_pos = np.matmul(rot_mat, np.array([x_centered, y_centered]))
 
+            # Rotate at origin
+            new_centered_pos = np.matmul(rot_mat,
+                               np.array([x_centered, y_centered]))
+
+            # Translate back to position
             new_x_ind = new_centered_pos[0] + x_half + 1
             new_y_ind = new_centered_pos[1] + y_half
-
             data_rotated[new_y_ind][new_x_ind] = data[y][x]
 
     h.imshow(data_rotated, t="After 90 degree rotation")
@@ -128,19 +134,20 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
             denum = np.float64(np.array(denum.all_coeffs()))
             if verbose:
                 print("Num and Denum: " + str(num, ) + ", " + str(denum))
-                zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter")
-                h.plot_filter(num, denum, t="2nd order butterworth bilinear filter", in_dB=False)
+                zplane(num, denum, t="zPlane 2nd order butterworth bilinear filter (sympy)")
+                h.plot_filter(num, denum, t="2nd order butterworth bilinear transform filter (sympy)", in_dB=True, in_freq=True, fe=fe)
         else:
             # Done by hand
             zeros = [-1, -1]
             poles = [np.complex(-0.2314, 0.3951), np.complex(-0.2314, -0.3951)]
+            k = 1 / 2.39
 
-            num = np.poly(zeros)
+            num = np.poly(zeros) * k
             denum = np.poly(poles)
 
             if verbose:
                 zplane(num, denum, t="Butterworth order 2 (trans bi) zplane")
-                h.plot_filter(num, denum, t="Butterworth order 2 (trans bi)", in_dB=False)
+                h.plot_filter(num, denum, t=" 2nd order Butterworth bilinear transform filter", in_dB=True, in_freq=True, fe=fe)
 
         data_denoised = signal.lfilter(num, denum, data)
         h.imshow(data_denoised, t="After Butterworth order2 trans bi filter")
@@ -180,7 +187,7 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
             num, denum = signal.ellip(order[3], g_pass, g_stop, wn[3], 'lowpass', False)
 
         if verbose:
-            h.plot_filter(num, denum, t="Filter response", in_dB=True)
+            h.plot_filter(num, denum, t="Elliptic filter order 5", in_dB=True, in_freq=True, fe=fe)
 
         data_denoised = signal.lfilter(num, denum, data)
         h.imshow(data_denoised, "After python function noise filter")
@@ -211,12 +218,11 @@ def compress_image(data, compress=True, compression_value=0.5, passing_matrix=No
         new_compressed_image = data_compressed[0:int((1-compression_value)*data_compressed.shape[0])]
         data_compressed = new_compressed_image
 
-    if verbose:
-        if compress:
-            name = "Compressed image with " + str(compression_value) + " compression ratio"
-            h.imshow(data_compressed, t=name)
-        else:
-            name = "Decompressed image with " + str(compression_value) + " compression ratio"
-            h.imshow(data_compressed, t=name)
+    if compress:
+        name = "Compressed image with " + str(compression_value) + " compression ratio"
+        h.imshow(data_compressed, t=name)
+    else:
+        name = "Decompressed image with " + str(compression_value) + " compression ratio"
+        h.imshow(data_compressed, t=name)
 
     return data_compressed, passing_matrix

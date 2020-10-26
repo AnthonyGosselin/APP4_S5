@@ -21,7 +21,7 @@ if __name__ == "__main__":
     verbose = True
 
     # Load all images
-    img_complete = image.load_image("image_complete.npy", show=False, title="Complete")
+    img_complete = image.load_image("image_complete.npy", show=True, title="Complete")
     img_aberration = image.load_image("goldhill_aberrations.npy", show=False, title="Aberrations")
     img_rotate = image.load_image("goldhill_rotate.png", show=False, title="Rotate")
     img_noise = image.load_image("goldhill_bruit.npy", show=False, title="Noisy")

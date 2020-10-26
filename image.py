@@ -23,6 +23,6 @@ def load_image(image_name, show=False, gray=True, title=""):
         raise Exception("File name must include either .png or .npy file extension")
 
     if show:
-        h.imshow(img, title=title)
+        h.imshow(img, t=title)
 
     return img

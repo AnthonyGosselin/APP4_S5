@@ -37,8 +37,14 @@ def gauchissement(fd, fe):
     wa = 2 * fe * np.tan(wd / 2)
     return wa
 
-def plot_filter(num, denum, t="", in_dB=False):
+def plot_filter(num, denum, t="", in_dB=False, in_freq=False, fe=None):
     w, Hw = signal.freqz(num, denum)
+
+    if in_freq:
+        w = w/(2*pi) * fe*2
 
     mod = dB(np.abs(Hw)) if in_dB else np.abs(Hw)
     plot(mod, w, t=t)
+
+    plt.ylabel("Amplitude (dB)") if in_dB else plt.ylabel("Amplitude")
+    plt.xlabel("Fréquence normalisée (rad/échantillon)") if not in_freq else plt.xlabel("Fréquence (Hz)")
