@@ -42,11 +42,11 @@ def H_inv(data, verbose=True, in_dB=True):
             print("Filter Unstable")
 
         # Print zplane for TF and inverse TF
-        zplane(num, denum, t="H(z) zplane")
+        # zplane(num, denum, t="H(z) zplane")
         zplane(num_inv, denum_inv, t="H(z)-1 zplane")
 
-        h.plot_filter(num, denum, t="H(z) (original) transfer function", in_dB=in_dB)
-        h.plot_filter(num_inv, denum_inv, t="H(z)-1 (inverse) transfer function", in_dB=in_dB)
+        # h.plot_filter(num, denum, t="H(z) (original) transfer function", in_dB=in_dB)
+        # h.plot_filter(num_inv, denum_inv, t="H(z)-1 (inverse) transfer function", in_dB=in_dB)
 
     data_filtered = signal.lfilter(num_inv, denum_inv, data)
     h.imshow(data_filtered, t="After H(z)-1 filter")
@@ -95,7 +95,7 @@ def rotate90(data, testing=False):
     return data_rotated
 
 
-def denoise(data, trans_bi=False, by_hand=False, verbose=True):
+def denoise(data, trans_bi=False, by_hand=False, verbose=True, show_plot=True):
     fd_pass = 500
     fd_stop = 750
     fe = 1600
@@ -143,7 +143,7 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
 
             if verbose:
                 zplane(num, denum, t="zPlane 2nd order butterworth bilinéaire filter")
-                h.plot_filter(num, denum, t="2nd order butterworth bilinéaire filter", in_dB=True)
+                h.plot_filter(num, denum, t="2nd order butterworth bilinéaire filter", in_dB=True, in_freq=True, fe=fe)
 
         else:
             # Done by hand
@@ -158,10 +158,12 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
             if verbose:
                 print("Num and Denum: " + str(num, ) + ", " + str(denum))
                 zplane(num, denum, t="Butterworth order 2 (trans. bilinéaire) zplane")
-                h.plot_filter(num, denum, t="Butterworth order 2 (trans. bilinéaire)", in_dB=True)
+                h.plot_filter(num, denum, t="Butterworth order 2 (trans. bilinéaire)", in_dB=True, in_freq=True, fe=fe)
 
         data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, t="After Butterworth order 2 trans. bilinéaire filter")
+
+        if show_plot:
+            h.imshow(data_denoised, t="After Butterworth order 2 trans. bilinéaire filter")
 
     else:
 
@@ -204,11 +206,13 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True):
             print(filter_name)
             filter_response_str = "Filter response " + filter_name
             zplane_str = "zPlane " + filter_name
-            h.plot_filter(num, denum, t=filter_response_str, in_dB=True)
+            h.plot_filter(num, denum, t=filter_response_str, in_dB=True, in_freq=True, fe=fe)
             zplane(num, denum, t=zplane_str)
 
         data_denoised = signal.lfilter(num, denum, data)
-        h.imshow(data_denoised, "After python function noise filter")
+
+        if show_plot:
+            h.imshow(data_denoised, "After python function noise filter")
 
     return data_denoised
 
@@ -236,11 +240,12 @@ def compress_image(data, compress=True, compression_value=0.5, passing_matrix=No
         new_compressed_image = data_compressed[0:int((1-compression_value)*data_compressed.shape[0])]
         data_compressed = new_compressed_image
 
-    if compress:
-        name = "Compressed image with " + str(compression_value) + " compression ratio"
-        h.imshow(data_compressed, t=name)
-    else:
-        name = "Decompressed image with " + str(compression_value) + " compression ratio"
-        h.imshow(data_compressed, t=name)
+    if verbose:
+        if compress:
+            name = "Compressed image with %.1f compression ratio" % compression_value
+            h.imshow(data_compressed, t=name)
+        else:
+            name = "Compressed image with %.1f compression ratio" % compression_value
+            h.imshow(data_compressed, t=name)
 
     return data_compressed, passing_matrix
