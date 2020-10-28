@@ -16,7 +16,9 @@ For the functions that we apply on the images in the APP
 
 def H_inv(data, verbose=True, in_dB=True):
     # Given TF
-    zeroes = [h.exp_img(0.9, pi / 2), h.exp_img(0.9, -pi / 2), h.exp_img(0.95, pi / 8), h.exp_img(0.95, -pi / 8)]
+    zeroes = [h.exp_img(0.9, pi / 2), h.exp_img(0.9, -pi / 2),
+              h.exp_img(0.95, pi / 8), h.exp_img(0.95, -pi / 8)]
+
     poles = [0, -0.99, -0.99, 0.9]  # 2x   -0.99??
     num = np.poly(zeroes)
     denum = np.poly(poles)
@@ -102,8 +104,8 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True, show_plot=True):
 
     w = 1 / fe
 
-    wd_pass = fd_pass * w
-    wd_stop = fd_stop * w
+    wd_pass = fd_pass
+    wd_stop = fd_stop
 
     g_pass = 0.5
     g_stop = 40
@@ -186,20 +188,21 @@ def denoise(data, trans_bi=False, by_hand=False, verbose=True, show_plot=True):
         if verbose:
             print(order)
             print(lowest_order_index)
+            print(wn)
 
         if (lowest_order_index == 0):
             filter_name = "Butterworth filter order {order}".format(order=order[0])
-            num, denum = signal.butter(order[0], wn[0], 'lowpass', False)
+            num, denum = signal.butter(order[0], wn[0], 'lowpass', False, 'ba', fe)
         elif (lowest_order_index == 1):
             filter_name = "Cheby1 filter order {order}".format(order=order[1])
-            num, denum = signal.cheby1(order[1], g_pass, wn[1], 'lowpass', False)
+            num, denum = signal.cheby1(order[1], g_pass, wn[1], 'lowpass', False, 'ba', fe)
         elif (lowest_order_index == 2):
             filter_name = "Cheby2 filter order {order}".format(order=order[2])
-            num, denum = signal.cheby2(order[2], g_stop, wn[2], 'lowpass', False)
+            num, denum = signal.cheby2(order[2], g_stop, wn[2], 'lowpass', False, 'ba', fe)
             filter_name = "Cheby2 " + str(order[2]) + " order"
         else:
             filter_name = "Ellip filter order {order}".format(order=order[3])
-            num, denum = signal.ellip(order[3], g_pass, g_stop, wn[3], 'lowpass', False)
+            num, denum = signal.ellip(order[3], g_pass, g_stop, wn[3], 'lowpass', False, 'ba', fe)
 
 
         if verbose:
@@ -221,7 +224,7 @@ def compress_image(data, compress=True, compression_value=0.5, passing_matrix=No
 
     if compress:
         # Find covariance matrix and then eigenvalues and eigenvectors
-        cov_matrix = np.cov(np.transpose(data))
+        cov_matrix = np.cov(data, rowvar=True)
         eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
         passing_matrix = np.transpose(eigenvectors)
     else:

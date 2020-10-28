@@ -17,7 +17,7 @@ Mettons les fonctions dans des fichiers externes, ici on aura juste du code pour
 
 if __name__ == "__main__":
     # If testing = false, use complete image, else use individual problem images
-    testing = True
+    testing = False
     verbose = True
     presentation = True
 
@@ -28,13 +28,11 @@ if __name__ == "__main__":
     img_noise = image.load_image("goldhill_bruit.npy", show=False, title="Noisy")
     img_original = image.load_image("goldhill.png", show=False, title="Original")
 
-    plt.show() # Not sure why, but there is always an empty graph showing at the beginning
-
     if not presentation:
         # Use functions with the right images, goldhill if testing each function individually and complete if final (same image recursively for all)
         img_out_filtered = functions.H_inv(img_aberration if testing else img_complete, verbose=verbose, in_dB=True)
         img_out_rotated = functions.rotate90(img_rotate if testing else img_out_filtered, testing)
-        img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, trans_bi=True, by_hand=False, verbose=verbose)
+        img_out_denoised = functions.denoise(img_noise if testing else img_out_rotated, trans_bi=False, by_hand=False, verbose=verbose)
 
         # Image compressions (first 0.5, then 0.7)
         img_out_compressed, passing_matrix = functions.compress_image(img_out_denoised, compress=True, compression_value=0.5, verbose=verbose)
@@ -45,6 +43,8 @@ if __name__ == "__main__":
         plt.show()  # Necessary to see all plots and images
     else:
         verbose = True
+
+        plt.show()  # Not sure why, but there is always an empty graph showing at the beginning
 
         # Aberration
         targ_img = img_aberration if testing else img_complete
